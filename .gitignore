@@ -50,4 +50,4 @@ buildNumber.properties
 *.jar
 
 # Database properties
-database.properties
+src/main/resources/database.properties
