@@ -1,44 +1,59 @@
 package ru.ivanov.springmvc.dao;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.ivanov.springmvc.models.Person;
 
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class PersonDAO {
-    private static int PEOPLE_COUNT = 0;
-    private List<Person> people;
-    {
-        people = new ArrayList<>();
-        people.add(new Person(++PEOPLE_COUNT, "Alina", 22, "bur@mail.ru"));
-        people.add(new Person(++PEOPLE_COUNT, "Pavel", 23, "iva@ya.ru"));
-        people.add(new Person(++PEOPLE_COUNT, "Misha", 21, "rad@google.com"));
-        people.add(new Person(++PEOPLE_COUNT, "Gleb", 17, "stoy@rabmler.com"));
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public PersonDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public List<Person> index() {
-        return people;
+        return jdbcTemplate.query("select * from person", new BeanPropertyRowMapper<>(Person.class));
     }
 
+    public Optional<Person> show(String email) {
+        return jdbcTemplate.query("select * from person where email=?", new BeanPropertyRowMapper<>(Person.class), email)
+                .stream()
+                .findAny();
+    }
     public Person show(int id) {
-        return people.stream().filter(p -> p.getId() == id).findAny().orElse(null);
+        return jdbcTemplate.query("select * from person where id = ?", new BeanPropertyRowMapper<>(Person.class), id)
+                .stream()
+                .findAny()
+                .orElse(null);
     }
 
     public void save(Person person) {
-        person.setId(++PEOPLE_COUNT);
-        people.add(person);
+        jdbcTemplate.update("insert into person(name, age, email) values (?, ?, ?)",
+                person.getName(),
+                person.getAge(),
+                person.getEmail()
+        );
     }
 
-    public void update(int id, Person person) {
-        Person personToUpdate = show(id);
-        personToUpdate.setName(person.getName());
-        personToUpdate.setAge(person.getAge());
-        personToUpdate.setEmail(person.getEmail());
+    public void update(int id, Person updatedPerson) {
+        jdbcTemplate.update("update person set name=?, age=?, email=? where id=?",
+                updatedPerson.getName(),
+                updatedPerson.getAge(),
+                updatedPerson.getEmail(),
+                updatedPerson.getId());
     }
 
     public void delete(int id) {
-        people.removeIf(p -> p.getId() == id);
+        jdbcTemplate.update("delete from person where id=?", id);
     }
 }

@@ -23,4 +23,6 @@ public class Person {
     @NotEmpty(message = "Email couldn't be empty")
     @Email(message = "Incorrect email address")
     private String email;
+
+
 }
